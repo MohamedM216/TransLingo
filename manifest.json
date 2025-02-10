@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Smart Dictionary",
+  "name": "TransLingo",
   "version": "1.0",
-  "description": "Quick word definitions with double-click and right-click",
+  "description": "Instant English-Arabic translations with examples. Double-click or right-click any word or paragraph to translate and learn.",
+  "short_name": "TransLingo",
+  "author": "mohammad.elshinnawy@gmail.com",
   "permissions": [
     "storage",
     "contextMenus",

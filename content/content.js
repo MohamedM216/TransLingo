@@ -17,24 +17,26 @@ document.addEventListener('dblclick', async (e) => {
       try {
           const isArabicText = isArabic(selectedText);
           if (isArabicText) {
+              const translationResult = await fetchTranslationWithCache(selectedText, true);
+              if (translationResult.error) {
+                  showPopup(selectedText, translationResult.message, null, window.mouseX, window.mouseY, true);
+                  return;
+              }
               try {
-                  const englishText = await fetchTranslationWithCache(selectedText, true);
-                  try {
-                      const definitionData = await fetchDefinitionWithCache(englishText);
-                      showPopup(selectedText, englishText, definitionData, window.mouseX, window.mouseY, true);
-                  } catch (defError) {
-                      showPopup(selectedText, englishText, null, window.mouseX, window.mouseY, true);
-                  }
-              } catch (error) {
-                  throw new Error('Translation failed');
+                  const definitionData = await fetchDefinitionWithCache(translationResult.translation);
+                  showPopup(selectedText, translationResult.translation, definitionData, window.mouseX, window.mouseY, true);
+              } catch (defError) {
+                  showPopup(selectedText, translationResult.translation, null, window.mouseX, window.mouseY, true);
               }
           } else {
               try {
-                  const [definitionData, translation] = await Promise.all([
-                      fetchDefinitionWithCache(selectedText),
-                      fetchTranslationWithCache(selectedText, false)
-                  ]);
-                  showPopup(selectedText, translation, definitionData, window.mouseX, window.mouseY, false);
+                  const translationResult = await fetchTranslationWithCache(selectedText, false);
+                  if (translationResult.error) {
+                      showPopup(selectedText, translationResult.message, null, window.mouseX, window.mouseY, false);
+                      return;
+                  }
+                  const definitionData = await fetchDefinitionWithCache(selectedText);
+                  showPopup(selectedText, translationResult.translation, definitionData, window.mouseX, window.mouseY, false);
               } catch (error) {
                   showPopup(selectedText, 'الترجمة غير متوفرة', null, window.mouseX, window.mouseY, false);
               }
@@ -65,6 +67,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Function to fetch translation with caching
 async function fetchTranslationWithCache(text, isArabicText) {
+  // Add character limit check with a lower threshold
+  if (text.length > 100) { // Reduced from 5000 to 100 for better reliability
+      const message = isArabicText ? 
+          'Text too long (maximum 100 characters)' : 
+          'النص طويل جداً (الحد الأقصى 100 حرف)';
+      // Instead of throwing error, return the message
+      return {
+          error: true,
+          message: message
+      };
+  }
+
   const sourceLang = isArabicText ? 'ar' : 'en';
   const targetLang = isArabicText ? 'en' : 'ar';
   
@@ -73,7 +87,10 @@ async function fetchTranslationWithCache(text, isArabicText) {
   const cachedTranslation = await DictionaryCache.get(cacheKey);
   
   if (cachedTranslation) {
-      return cachedTranslation;
+      return {
+          error: false,
+          translation: cachedTranslation
+      };
   }
 
   // If not in cache, fetch from API
@@ -82,18 +99,47 @@ async function fetchTranslationWithCache(text, isArabicText) {
   
   try {
       const response = await fetch(url);
+
+      if (response.status === 429) {
+          return {
+              error: true,
+              message: isArabicText ? 
+                  'Daily limit reached. Try again tomorrow.' : 
+                  'تم الوصول إلى الحد اليومي. حاول مرة أخرى غداً'
+          };
+      }
+
       const data = await response.json();
       
       if (data.responseStatus === 200 && data.responseData.translatedText) {
           const translation = data.responseData.translatedText;
-          // Store in cache before returning
           await DictionaryCache.set(cacheKey, translation);
-          return translation;
+          return {
+              error: false,
+              translation: translation
+          };
       }
-      throw new Error('Translation failed');
+
+      if (data.responseStatus === 403 || 
+          (data.responseDetails && data.responseDetails.includes('quota'))) {
+          return {
+              error: true,
+              message: isArabicText ? 
+                  'Daily limit reached. Try again tomorrow.' : 
+                  'تم الوصول إلى الحد اليومي. حاول مرة أخرى غداً'
+          };
+      }
+      
+      return {
+          error: true,
+          message: isArabicText ? 'Translation not available' : 'الترجمة غير متوفرة'
+      };
   } catch (error) {
       console.error('Translation error:', error);
-      return isArabicText ? 'Translation not available' : 'الترجمة غير متوفرة';
+      return {
+          error: true,
+          message: isArabicText ? 'Translation not available' : 'الترجمة غير متوفرة'
+      };
   }
 }
 
@@ -139,16 +185,36 @@ async function showPopup(originalText, translation, definition, x, y, isArabicTe
   const style = document.createElement('style');
   style.textContent = `
       .dict-popup {
-          background: white;
-          padding: 15px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          max-width: 300px;
-          font-family: Arial, sans-serif;
-          color: #333;
-          line-height: 1.5;
-      }
+        background: white;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-width: 300px;
+        max-height: 400px; /* Set a maximum height */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: hidden; /* Hide horizontal scrollbar */
+        font-family: Arial, sans-serif;
+        color: #333;
+        line-height: 1.5;
+        display: flex;
+        flex-direction: column;
+    }
+    .dict-popup::-webkit-scrollbar {
+        width: 6px; /* Width of the scrollbar */
+    }
+    .dict-popup::-webkit-scrollbar-track {
+        background: #f1f1f1; /* Color of the scrollbar track */
+        border-radius: 3px;
+    }
+    .dict-popup::-webkit-scrollbar-thumb {
+        background: #1a73e8; /* Color of the scrollbar thumb */
+        border-radius: 3px;
+    }
+    .dict-popup::-webkit-scrollbar-thumb:hover {
+        background: #1557b0; /* Color of the scrollbar thumb on hover */
+    }
+
       .dict-popup h3 {
           margin: 0 0 10px;
           font-size: 18px;
@@ -297,7 +363,7 @@ async function showPopup(originalText, translation, definition, x, y, isArabicTe
   shadowRoot.appendChild(popup);
 
   const popupWidth = 300;
-  const popupHeight = 200;
+  const popupHeight = 400;
   const adjustedPosition = adjustPopupPosition(x, y, popupWidth, popupHeight);
   popupContainer.style.left = `${adjustedPosition.x}px`;
   popupContainer.style.top = `${adjustedPosition.y}px`;
