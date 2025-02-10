@@ -153,6 +153,29 @@ function showPopup(originalText, translation, definition, x, y, isArabicText) {
           -webkit-user-select: none;
           -ms-user-select: none;
       }
+      .practice-button {
+          background-color: #1a73e8;
+          color: white;
+          border: none;
+          padding: 5px 10px;
+          border-radius: 4px;
+          cursor: pointer;
+          margin-top: 10px;
+          font-size: 12px;
+          transition: background-color 0.2s;
+      }
+      .practice-button:hover {
+          background-color: #1557b0;
+      }
+      .practice-button.added {
+          background-color: #34a853;
+          cursor: default;
+      }
+      .button-container {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 10px;
+      }
   `;
   shadowRoot.appendChild(style);
 
@@ -193,7 +216,28 @@ function showPopup(originalText, translation, definition, x, y, isArabicText) {
       }
   }
 
+  // Add practice button
+  content += `
+      <div class="button-container">
+          <button class="practice-button" id="addToPractice">
+              ${isArabicText ? 'Add to Practice' : 'أضف للتمرين'}
+          </button>
+      </div>
+  `;
+
   popup.innerHTML += content;
+
+  // Add click handler for the practice button
+  const practiceButton = popup.querySelector('#addToPractice');
+  practiceButton.addEventListener('click', async () => {
+      const added = await PracticeManager.addWord(originalText, translation, isArabicText);
+      if (added) {
+          practiceButton.textContent = isArabicText ? 'Added!' : 'تمت الإضافة!';
+          practiceButton.classList.add('added');
+          practiceButton.disabled = true;
+      }
+  });
+
   shadowRoot.appendChild(popup);
 
   const popupWidth = 300;

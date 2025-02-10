@@ -13,7 +13,7 @@
     "https://api.dictionaryapi.dev/*"
   ],
   "action": {
-    "default_popup": "popup/popup.html",
+    "default_popup": "practice/practice.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -25,7 +25,8 @@
       "matches": ["<all_urls>"],
       "js": [
         "content/content.js",
-        "cache.js"
+        "cache.js",
+        "practice/practice.js"
       ]
     }
   ],
