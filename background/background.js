@@ -1,3 +1,4 @@
+// background.js
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.removeAll(() => {
         chrome.contextMenus.create({
@@ -15,7 +16,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             const isArabic = /[\u0600-\u06FF]/.test(selectedText);
 
             if (isArabic) {
-                // For Arabic text, get English translation
+                // For Arabic text
                 const translationUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(selectedText)}&langpair=ar|en`;
                 const translationResponse = await fetch(translationUrl);
                 const translationData = await translationResponse.json();
@@ -34,7 +35,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                     });
                 }
             } else {
-                // For English text, get Arabic translation and English definition
+                // For English text
                 const [definitionResponse, translationResponse] = await Promise.all([
                     fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(selectedText)}`),
                     fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(selectedText)}&langpair=en|ar`)

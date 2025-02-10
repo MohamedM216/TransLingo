@@ -89,7 +89,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Function to show the popup
-function showPopup(originalText, translation, definition, x, y, isArabicText) {
+async function showPopup(originalText, translation, definition, x, y, isArabicText) {
   const existingPopup = document.getElementById('dictionary-popup');
   if (existingPopup) {
       existingPopup.remove();
@@ -171,10 +171,20 @@ function showPopup(originalText, translation, definition, x, y, isArabicText) {
           background-color: #34a853;
           cursor: default;
       }
+      .practice-button.disabled {
+          background-color: #ccc;
+          cursor: not-allowed;
+      }
       .button-container {
           display: flex;
-          justify-content: flex-end;
+          flex-direction: column;
+          align-items: flex-end;
           margin-top: 10px;
+      }
+      .notification {
+          font-size: 11px;
+          color: #d32f2f;
+          margin-top: 4px;
       }
   `;
   shadowRoot.appendChild(style);
@@ -216,27 +226,39 @@ function showPopup(originalText, translation, definition, x, y, isArabicText) {
       }
   }
 
-  // Add practice button
-  content += `
-      <div class="button-container">
-          <button class="practice-button" id="addToPractice">
-              ${isArabicText ? 'Add to Practice' : 'أضف للتمرين'}
-          </button>
-      </div>
-  `;
+  // Add practice button only for English words
+  if (!isArabicText) {
+      const isInPractice = await PracticeManager.isWordInPractice(originalText);
+      content += `
+          <div class="button-container">
+              ${isInPractice ? 
+                  `<button class="practice-button added" disabled>Already in Practice</button>
+                   <div class="notification">This word is already in your practice list</div>` :
+                  `<button class="practice-button" id="addToPractice">Add to Practice</button>`
+              }
+          </div>
+      `;
+  }
 
   popup.innerHTML += content;
 
   // Add click handler for the practice button
   const practiceButton = popup.querySelector('#addToPractice');
-  practiceButton.addEventListener('click', async () => {
-      const added = await PracticeManager.addWord(originalText, translation, isArabicText);
-      if (added) {
-          practiceButton.textContent = isArabicText ? 'Added!' : 'تمت الإضافة!';
-          practiceButton.classList.add('added');
-          practiceButton.disabled = true;
-      }
-  });
+  if (practiceButton) {
+      practiceButton.addEventListener('click', async () => {
+          const result = await PracticeManager.addWord(originalText, translation, false);
+          if (result.success) {
+              practiceButton.textContent = 'Added to Practice';
+              practiceButton.classList.add('added');
+              practiceButton.disabled = true;
+          } else {
+              const notification = document.createElement('div');
+              notification.className = 'notification';
+              notification.textContent = result.message;
+              practiceButton.parentNode.appendChild(notification);
+          }
+      });
+  }
 
   shadowRoot.appendChild(popup);
 
