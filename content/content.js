@@ -17,49 +17,24 @@ document.addEventListener('dblclick', async (e) => {
       try {
           const isArabicText = isArabic(selectedText);
           if (isArabicText) {
-              // For Arabic text, get English translation
-              const translationUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(selectedText)}&langpair=ar|en`;
-              const translationResponse = await fetch(translationUrl);
-              const translationData = await translationResponse.json();
-              
-              if (translationData.responseStatus === 200) {
-                  const englishText = translationData.responseData.translatedText;
+              try {
+                  const englishText = await fetchTranslationWithCache(selectedText, true);
                   try {
-                      const definitionResponse = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(englishText)}`);
-                      const definitionData = await definitionResponse.json();
+                      const definitionData = await fetchDefinitionWithCache(englishText);
                       showPopup(selectedText, englishText, definitionData, window.mouseX, window.mouseY, true);
                   } catch (defError) {
-                      // If definition fetch fails, still show the translation
                       showPopup(selectedText, englishText, null, window.mouseX, window.mouseY, true);
                   }
-              } else {
+              } catch (error) {
                   throw new Error('Translation failed');
               }
           } else {
-              // For English text, get Arabic translation and English definition
               try {
-                  const [definitionResponse, translationResponse] = await Promise.all([
-                      fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(selectedText)}`),
-                      fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(selectedText)}&langpair=en|ar`)
+                  const [definitionData, translation] = await Promise.all([
+                      fetchDefinitionWithCache(selectedText),
+                      fetchTranslationWithCache(selectedText, false)
                   ]);
-
-                  const [definitionData, translationData] = await Promise.all([
-                      definitionResponse.json(),
-                      translationResponse.json()
-                  ]);
-
-                  if (translationData.responseStatus === 200) {
-                      showPopup(
-                          selectedText,
-                          translationData.responseData.translatedText,
-                          definitionData,
-                          window.mouseX,
-                          window.mouseY,
-                          false
-                      );
-                  } else {
-                      throw new Error('Translation failed');
-                  }
+                  showPopup(selectedText, translation, definitionData, window.mouseX, window.mouseY, false);
               } catch (error) {
                   showPopup(selectedText, 'الترجمة غير متوفرة', null, window.mouseX, window.mouseY, false);
               }
@@ -87,6 +62,65 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       );
   }
 });
+
+// Function to fetch translation with caching
+async function fetchTranslationWithCache(text, isArabicText) {
+  const sourceLang = isArabicText ? 'ar' : 'en';
+  const targetLang = isArabicText ? 'en' : 'ar';
+  
+  // Check cache first
+  const cacheKey = DictionaryCache.createKey('translation', text, sourceLang, targetLang);
+  const cachedTranslation = await DictionaryCache.get(cacheKey);
+  
+  if (cachedTranslation) {
+      return cachedTranslation;
+  }
+
+  // If not in cache, fetch from API
+  const encodedText = encodeURIComponent(text);
+  const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${sourceLang}|${targetLang}`;
+  
+  try {
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.responseStatus === 200 && data.responseData.translatedText) {
+          const translation = data.responseData.translatedText;
+          // Store in cache before returning
+          await DictionaryCache.set(cacheKey, translation);
+          return translation;
+      }
+      throw new Error('Translation failed');
+  } catch (error) {
+      console.error('Translation error:', error);
+      return isArabicText ? 'Translation not available' : 'الترجمة غير متوفرة';
+  }
+}
+
+// Function to fetch definition with caching
+async function fetchDefinitionWithCache(word) {
+  // Check cache first
+  const cacheKey = DictionaryCache.createKey('definition', word, 'en', 'en');
+  const cachedDefinition = await DictionaryCache.get(cacheKey);
+  
+  if (cachedDefinition) {
+      return cachedDefinition;
+  }
+
+  // If not in cache, fetch from API
+  try {
+      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+      if (!response.ok) throw new Error('API request failed');
+      const data = await response.json();
+      
+      // Store in cache before returning
+      await DictionaryCache.set(cacheKey, data);
+      return data;
+  } catch (error) {
+      console.error('Error fetching definition:', error);
+      throw new Error('Unable to fetch definition. Please try again later.');
+  }
+}
 
 // Function to show the popup
 async function showPopup(originalText, translation, definition, x, y, isArabicText) {
