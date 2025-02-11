@@ -27,7 +27,7 @@ async function displayPracticeWords(searchQuery = '') {
         </div>
     `).join('');
 
-    // Add remove button handlers
+    // Remove button handlers
     document.querySelectorAll('.remove-button').forEach(button => {
         button.addEventListener('click', async () => {
             await PracticeManager.removeWord(button.dataset.word);
@@ -36,10 +36,9 @@ async function displayPracticeWords(searchQuery = '') {
     });
 }
 
-// Initialize search functionality
 document.getElementById('searchInput').addEventListener('input', (e) => {
     displayPracticeWords(e.target.value);
 });
 
-// Initial display
+
 displayPracticeWords();

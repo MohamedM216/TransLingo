@@ -4,7 +4,7 @@ document.addEventListener('mousemove', (e) => {
   window.mouseY = e.clientY;
 });
 
-// Function to detect if text is Arabic
+// Detect if text is Arabic
 function isArabic(text) {
   const arabicPattern = /[\u0600-\u06FF]/;
   return arabicPattern.test(text);
@@ -65,14 +65,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Function to fetch translation with caching
+// Fetch translation with caching
 async function fetchTranslationWithCache(text, isArabicText) {
-  // Add character limit check with a lower threshold
-  if (text.length > 100) { // Reduced from 5000 to 100 for better reliability
+  if (text.length > 100) {
       const message = isArabicText ? 
           'Text too long (maximum 100 characters)' : 
           'النص طويل جداً (الحد الأقصى 100 حرف)';
-      // Instead of throwing error, return the message
       return {
           error: true,
           message: message
@@ -143,7 +141,7 @@ async function fetchTranslationWithCache(text, isArabicText) {
   }
 }
 
-// Function to fetch definition with caching
+// Fetch definition with caching
 async function fetchDefinitionWithCache(word) {
   // Check cache first
   const cacheKey = DictionaryCache.createKey('definition', word, 'en', 'en');
@@ -326,7 +324,7 @@ async function showPopup(originalText, translation, definition, x, y, isArabicTe
       }
   }
 
-  // Add practice button only for English words
+  // Practice button only for English words
   if (!isArabicText) {
       const isInPractice = await PracticeManager.isWordInPractice(originalText);
       content += `
@@ -342,7 +340,7 @@ async function showPopup(originalText, translation, definition, x, y, isArabicTe
 
   popup.innerHTML += content;
 
-  // Add click handler for the practice button
+  // Click handler for the practice button
   const practiceButton = popup.querySelector('#addToPractice');
   if (practiceButton) {
       practiceButton.addEventListener('click', async () => {
@@ -380,7 +378,7 @@ async function showPopup(originalText, translation, definition, x, y, isArabicTe
   enableDrag(popupContainer, dragHandle);
 }
 
-// Function to adjust the popup position
+// Adjust the popup position
 function adjustPopupPosition(x, y, popupWidth, popupHeight) {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
@@ -395,7 +393,7 @@ function adjustPopupPosition(x, y, popupWidth, popupHeight) {
   return { x, y };
 }
 
-// Function to enable dragging of the popup
+// Enable dragging of the popup
 function enableDrag(element, dragHandle) {
   let isDragging = false;
   let offsetX, offsetY;
