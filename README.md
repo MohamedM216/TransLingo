@@ -35,8 +35,6 @@ TransLingo is a Chrome extension designed to make language translation and learn
 ### **Move the Popup**  
 - Drag the popup by its handle to reposition it on the screen.  
 
-## Demo
-
 ## Screenshots  
 
 - **TransLingo Extension:**
