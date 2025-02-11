@@ -13,7 +13,7 @@ TransLingo is a Chrome extension designed to make language translation and learn
 ## Installation  
 
 ### From a Zip File  
-1. Download the `.zip` file containing the extension--[Click here](google-drive-link).  
+1. Download the `.zip` file containing the extension--[Click here](https://drive.google.com/file/d/1cXKbNkZO1E58rsitNMxtHcuGXMbRzg2i/view?usp=drive_link).  
 2. Extract the contents to a folder on your computer.  
 3. Open Chrome and go to `chrome://extensions/`.  
 4. Enable **Developer Mode** (toggle in the top-right corner).  
@@ -63,6 +63,6 @@ This project is licensed under the **GPL-3.0 License**. See the [LICENSE](LICENS
 ## About the Developer  
 
 **TransLingo** is developed by **Mohammad Mahmoud El-Shennawy**
-Connect with me on **LinkedIn** or visit my portfolio to learn more about my work.  
+Connect with me on [**LinkedIn**](https://www.linkedin.com/in/mohammad-elshennawy) or visit my portfolio to learn more about my work.  
 
 🌟 **Enjoy using TransLingo! Happy translating and learning!**  
