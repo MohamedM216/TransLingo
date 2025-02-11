@@ -67,10 +67,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Fetch translation with caching
 async function fetchTranslationWithCache(text, isArabicText) {
-  if (text.length > 100) {
+  if (text.length > 500) {
       const message = isArabicText ? 
-          'Text too long (maximum 100 characters)' : 
-          'النص طويل جداً (الحد الأقصى 100 حرف)';
+          'Text too long (maximum 500 characters)' : 
+          'النص طويل جداً (الحد الأقصى 500 حرف)';
       return {
           error: true,
           message: message

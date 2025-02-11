@@ -13,7 +13,7 @@ TransLingo is a Chrome extension designed to make language translation and learn
 ## Installation  
 
 ### From a Zip File  
-1. Download the `.zip` file containing the extension--[Click here](https://drive.google.com/file/d/1cXKbNkZO1E58rsitNMxtHcuGXMbRzg2i/view?usp=drive_link).  
+1. Download the `.zip` file containing the extension--[Click here](https://drive.google.com/file/d/1FAaQsn7sKwoaxuWt1mubaf7fSMZRpbrr/view?usp=drive_link).  
 2. Extract the contents to a folder on your computer.  
 3. Open Chrome and go to `chrome://extensions/`.  
 4. Enable **Developer Mode** (toggle in the top-right corner).  
