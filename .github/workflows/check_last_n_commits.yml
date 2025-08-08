@@ -1,0 +1,27 @@
+name: Check Last 10 Commits
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Get last 10 commits and run script
+        run: |
+          LAST_COMMITS="$(git log -10 --oneline)"
+          echo "Last commits:"
+          echo "$LAST_COMMITS"
+          
+          # Send the commits to the Python script via stdin
+          echo "$LAST_COMMITS" | python3 scripts/process_commits.py
