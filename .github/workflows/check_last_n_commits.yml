@@ -22,4 +22,4 @@ jobs:
       - name: Get last 10 commits and run script
         run: |
           MERGE_COMMITS="$(git log --merges -n 10 --pretty=format:'%H %s')"
-          echo "$MERGE_COMMITS" | python3 scripts/check_changelog.py
+          echo "$MERGE_COMMITS" | python3 scripts/process_commits.py
